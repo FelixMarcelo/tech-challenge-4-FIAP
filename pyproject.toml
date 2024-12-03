@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "tech-challenge-4-deep-learning"
+version = "0.1.0"
+description = "PMML model do predict stock tendency price. This model needs to be consumed by an API built with FastAPI"
+authors = ["Marcelo Felix"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.115.5"
+uvicorn = "^0.32.1"
+prometheus-client = "^0.21.0"
+starlette = "^0.41.3"
+apscheduler = "^3.11.0"
+yfinance = "^0.2.50"
+scikit-learn = "^1.5.2"
+tensorflow = "^2.18.0"
+matplotlib = "^3.9.3"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+ipykernel = "^6.29.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s  
+
+scrape_configs:
+  - job_name: 'LSTM_stocks_tendency_model'  
+    static_configs:
+      - targets: ['tech_challenge_4:8000']  
