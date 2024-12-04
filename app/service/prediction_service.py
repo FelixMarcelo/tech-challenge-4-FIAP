@@ -4,8 +4,9 @@ from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from .update_service import update
-
-
+from fastapi import HTTPException
+from ..dto.priceDTO import PriceListDTO
+import pandas as pd
 
     
 def predict_next_day(stock_symbol: str, model):
@@ -18,12 +19,12 @@ def predict_next_day(stock_symbol: str, model):
     y_pred = scaler.inverse_transform(y_pred)
     y_test_actual = scaler.inverse_transform(y.reshape(-1, 1))
     
-    return {"predicted_price": y_pred[-1]}
+    return {"predicted_price": round(float(y_pred[-1]), 2)}
 
 
 def preprocess_data(stock_symbol):
-    start_date = '2018-01-01'
     end_date = datetime.now()
+    start_date = end_date - timedelta(days=365)
     
     data = yf.download(stock_symbol, start=start_date, end=end_date)
             
@@ -46,7 +47,9 @@ def create_sequences(data, seq_length=60):
     return np.array(X), np.array(y)
 
 
-def evaluate_models_performance_last_30_days(stock_symbol: str, model):
+def evaluate_models_performance_last_30_days(stock_symbol: str, model, n_days: int):
+    if n_days > 365:
+        raise HTTPException(status_code=400, detail="n_days needs to be less than or equal to 365")
    # Preprocess the data
     X, y, scaler = preprocess_data(stock_symbol)
 
@@ -55,14 +58,26 @@ def evaluate_models_performance_last_30_days(stock_symbol: str, model):
     y_pred = scaler.inverse_transform(y_pred)
     y_test_actual = scaler.inverse_transform(y.reshape(-1, 1))
     
-    
-    
-    mae = mean_absolute_error(y_test_actual, y_pred)
-    rmse = np.sqrt(mean_squared_error(y_test_actual, y_pred))
+    mae = mean_absolute_error(y_test_actual[-n_days:], y_pred[-n_days:])
+    rmse = np.sqrt(mean_squared_error(y_test_actual[-n_days:], y_pred[-n_days:]))
     
     update(mae, rmse)
     
     return mae, rmse
+
+def predict_input(input: PriceListDTO, model):
+    new_data_df = pd.DataFrame(input.priceList, columns=['Close'])
+
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    new_data_scaled = scaler.fit_transform(new_data_df[['Close']])
+
+    sequence = new_data_scaled[-60:].reshape((1, 60, 1))  
+
+    predicted_price = model.predict(sequence)
+
+    predicted_price_unscaled = scaler.inverse_transform(predicted_price)
+
+    return {"predicted_price": round(float(predicted_price_unscaled), 2)}
     
     
     
